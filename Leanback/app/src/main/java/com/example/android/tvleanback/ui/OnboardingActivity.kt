@@ -14,7 +14,12 @@ class OnboardingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            OnboardingScreen(onFinish = { finish() })
+            OnboardingScreen(
+                onFinish = {
+                    startActivity(android.content.Intent(this@OnboardingActivity, MainActivity::class.java))
+                    finish()
+                }
+            )
         }
     }
 }

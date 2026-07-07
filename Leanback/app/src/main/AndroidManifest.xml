@@ -101,6 +101,7 @@
             android:parentActivityName=".ui.MainActivity"
             android:theme="@style/Theme.Leanback.VerticalGrid" />
         <activity android:name=".ui.SearchActivity" />
+        <activity android:name=".ui.ErrorActivity" />
         <activity
             android:name=".ui.GuidedStepActivity"
             android:theme="@style/Theme.Example.Leanback.GuidedStep" />

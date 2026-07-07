@@ -18,10 +18,14 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -44,6 +48,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
 
     val pageTitles = listOf(
         R.string.onboarding_title_welcome,
@@ -65,6 +70,10 @@ fun OnboardingScreen(
     )
 
     val pagerState = rememberPagerState(pageCount = { pageTitles.size })
+
+    LaunchedEffect(pagerState.currentPage) {
+        focusRequester.requestFocus()
+    }
 
     fun completeOnboarding() {
         val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
@@ -158,12 +167,16 @@ fun OnboardingScreen(
                                 scope.launch {
                                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
                                 }
-                            }
+                            },
+                            modifier = Modifier.focusRequester(focusRequester)
                         ) {
                             Text(text = "CONTINUE")
                         }
                     } else {
-                        Button(onClick = { completeOnboarding() }) {
+                        Button(
+                            onClick = { completeOnboarding() },
+                            modifier = Modifier.focusRequester(focusRequester)
+                        ) {
                             Text(text = "GET STARTED")
                         }
                     }

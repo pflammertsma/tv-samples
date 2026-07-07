@@ -2,17 +2,19 @@ package com.example.android.tvleanback.ui
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.fragment.app.FragmentActivity
 import androidx.preference.PreferenceManager
 import com.example.android.tvleanback.ui.screens.BrowseScreen
 
-class MainActivity : FragmentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         if (!prefs.getBoolean(OnboardingActivity.COMPLETED_ONBOARDING, false)) {
             startActivity(Intent(this, OnboardingActivity::class.java))
+            finish()
+            return
         }
         setContent {
             BrowseScreen(
@@ -35,11 +37,7 @@ class MainActivity : FragmentActivity() {
                     startActivity(Intent(this, GuidedStepActivity::class.java))
                 },
                 onErrorFragmentClick = {
-                    val fragment = BrowseErrorFragment()
-                    supportFragmentManager.beginTransaction()
-                        .add(android.R.id.content, fragment)
-                        .addToBackStack(null)
-                        .commit()
+                    startActivity(Intent(this, ErrorActivity::class.java))
                 }
             )
         }
