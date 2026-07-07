@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.CompactCard
 import androidx.tv.material3.ExperimentalTvMaterial3Api
+import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
 import com.example.android.tvleanback.model.Video
@@ -22,7 +23,7 @@ fun MovieCard(
     video: Video,
     onClick: (Video) -> Unit,
     modifier: Modifier = Modifier,
-    cardWidth: Dp = 180.dp
+    cardWidth: Dp = 220.dp
 ) {
     CompactCard(
         onClick = { onClick(video) },
@@ -40,16 +41,22 @@ fun MovieCard(
             Text(
                 text = video.title ?: "",
                 maxLines = 1,
-                modifier = Modifier.padding(top = 8.dp)
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 10.dp, start = 8.dp, end = 8.dp)
             )
         },
         subtitle = {
-            Text(
-                text = video.studio ?: "",
-                maxLines = 1
-            )
+            if (!video.studio.isNullOrEmpty()) {
+                Text(
+                    text = video.studio,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp, bottom = 6.dp)
+                )
+            }
         },
-        scale = CardDefaults.scale(focusedScale = 1.1f),
+        scale = CardDefaults.scale(focusedScale = 1.08f),
         modifier = modifier.width(cardWidth)
     )
 }

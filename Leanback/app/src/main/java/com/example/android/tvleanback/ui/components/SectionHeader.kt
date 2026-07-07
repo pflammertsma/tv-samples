@@ -16,8 +16,8 @@ fun SectionHeader(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.padding(vertical = 12.dp, horizontal = 16.dp)
+        modifier = modifier.padding(vertical = 12.dp)
     )
 }
