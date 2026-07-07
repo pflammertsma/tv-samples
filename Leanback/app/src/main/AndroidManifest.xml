@@ -14,8 +14,7 @@
      limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.android.tvleanback">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -117,21 +116,9 @@
                 android:readPermission="android.permission.GLOBAL_SEARCH" />
         </provider>
 
-        <receiver
-            android:name=".recommendation.RecommendationReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-
         <service
             android:name=".data.FetchVideoService"
             android:exported="false" />
-        <service
-            android:name=".recommendation.UpdateRecommendationsService"
-            android:enabled="true" />
 
         <activity android:name=".ui.OnboardingActivity"
             android:enabled="true"
