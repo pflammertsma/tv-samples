@@ -144,6 +144,7 @@ fun OnboardingScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(bottom = 24.dp)
                 ) {
                     repeat(pageTitles.size) { index ->
@@ -160,26 +161,20 @@ fun OnboardingScreen(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (pagerState.currentPage < pageTitles.size - 1) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                                }
-                            },
-                            modifier = Modifier.focusRequester(focusRequester)
-                        ) {
-                            Text(text = "CONTINUE")
+                val isLastPage = pagerState.currentPage == pageTitles.size - 1
+                Button(
+                    onClick = {
+                        if (isLastPage) {
+                            completeOnboarding()
+                        } else {
+                            scope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
                         }
-                    } else {
-                        Button(
-                            onClick = { completeOnboarding() },
-                            modifier = Modifier.focusRequester(focusRequester)
-                        ) {
-                            Text(text = "GET STARTED")
-                        }
-                    }
+                    },
+                    modifier = Modifier.focusRequester(focusRequester)
+                ) {
+                    Text(text = if (isLastPage) "GET STARTED" else "CONTINUE")
                 }
             }
         }

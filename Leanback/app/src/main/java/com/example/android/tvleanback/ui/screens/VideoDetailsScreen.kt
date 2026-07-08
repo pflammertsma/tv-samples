@@ -1,7 +1,10 @@
 package com.example.android.tvleanback.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,32 +18,57 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.OutlinedButton
+import androidx.tv.material3.OutlinedButtonDefaults
 import androidx.tv.material3.Text
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.example.android.tvleanback.data.VideoRepository
 import com.example.android.tvleanback.model.Video
 import com.example.android.tvleanback.ui.components.MovieCard
+import com.example.android.tvleanback.ui.components.MovieCardPlaceholder
 import com.example.android.tvleanback.ui.components.SectionHeader
+import com.example.android.tvleanback.ui.components.StudioBadge
 import com.example.android.tvleanback.ui.theme.TvLeanbackTheme
 
-@OptIn(ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun VideoDetailsScreen(
     video: Video,
@@ -50,9 +78,13 @@ fun VideoDetailsScreen(
 ) {
     val context = LocalContext.current
     var allVideos by remember { mutableStateOf<List<Video>?>(null) }
+    val focusRequester = remember { FocusRequester() }
+    var showDescriptionOverlay by remember { mutableStateOf(false) }
+    var hasVisualOverflow by remember(video.description) { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         allVideos = VideoRepository.getVideos(context)
+        focusRequester.requestFocus()
     }
 
     val relatedVideos = remember(allVideos, video) {
@@ -90,13 +122,14 @@ fun VideoDetailsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 48.dp, vertical = 36.dp),
+                    .padding(vertical = 36.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top Details Section
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 48.dp)
                         .weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -114,32 +147,71 @@ fun VideoDetailsScreen(
 
                     // Info & Actions
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.Center
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(330.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = video.studio ?: "",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = video.title ?: "",
-                            style = MaterialTheme.typography.displayMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = video.description ?: "",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 4
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            if (!video.studio.isNullOrEmpty()) {
+                                StudioBadge(studio = video.studio)
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                            Text(
+                                text = video.title ?: "",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = video.description ?: "",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                onTextLayout = { textLayoutResult ->
+                                    if (textLayoutResult.hasVisualOverflow) {
+                                        hasVisualOverflow = true
+                                    }
+                                }
+                            )
+                            if (hasVisualOverflow) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedButton(
+                                    onClick = { showDescriptionOverlay = true },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    colors = OutlinedButtonDefaults.colors(
+                                        containerColor = Color.Transparent,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        focusedContainerColor = Color.Transparent,
+                                        focusedContentColor = MaterialTheme.colorScheme.onSurface
+                                    ),
+                                    border = OutlinedButtonDefaults.border(
+                                        border = androidx.tv.material3.Border(
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Transparent)
+                                        ),
+                                        focusedBorder = androidx.tv.material3.Border(
+                                            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                                        )
+                                    ),
+                                    scale = OutlinedButtonDefaults.scale(focusedScale = 1.0f)
+                                ) {
+                                    Text(
+                                        text = "READ MORE",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
 
-                        // Action Buttons Row
+                        // Action Buttons Row (anchored to bottom of 330.dp container, zero jump when READ MORE appears!)
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Button(onClick = { onWatchTrailerClick(video) }) {
+                            Button(
+                                onClick = { onWatchTrailerClick(video) },
+                                modifier = Modifier.focusRequester(focusRequester)
+                            ) {
                                 Text(text = "WATCH TRAILER")
                             }
                             Button(onClick = {
@@ -156,23 +228,132 @@ fun VideoDetailsScreen(
                     }
                 }
 
-                // Related Videos Row
-                if (relatedVideos.isNotEmpty()) {
+                // Related Videos Row or Loading Placeholder
+                if (allVideos == null) {
+                    // Skeleton Loading Placeholder (exact sub-pixel layout match to prevent any UI expansion or jump!)
                     Column {
-                        SectionHeader(title = "Related Videos")
-                        LazyRow(
-                            contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
+                        SectionHeader(
+                            title = " ",
+                            modifier = Modifier
+                                .padding(horizontal = 48.dp)
+                                .padding(top = 16.dp, bottom = 0.dp)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 48.dp, end = 48.dp, top = 4.dp, bottom = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            items(relatedVideos) { relatedVideo ->
+                            repeat(4) {
+                                MovieCardPlaceholder()
+                            }
+                        }
+                    }
+                } else if (relatedVideos.isNotEmpty()) {
+                    val firstItemFocusRequester = remember { FocusRequester() }
+                    Column {
+                        SectionHeader(
+                            title = "Related Videos",
+                            modifier = Modifier
+                                .padding(horizontal = 48.dp)
+                                .padding(top = 16.dp, bottom = 0.dp)
+                        )
+                        LazyRow(
+                            contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 4.dp, bottom = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.focusRestorer { firstItemFocusRequester }
+                        ) {
+                            itemsIndexed(relatedVideos) { index, relatedVideo ->
                                 MovieCard(
                                     video = relatedVideo,
-                                    onClick = onRelatedVideoClick
+                                    onClick = onRelatedVideoClick,
+                                    modifier = if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier
                                 )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    if (showDescriptionOverlay) {
+        BackHandler {
+            showDescriptionOverlay = false
+        }
+        val overlayFocusRequester = remember { FocusRequester() }
+        val scrollState = rememberScrollState()
+        val coroutineScope = rememberCoroutineScope()
+
+        LaunchedEffect(Unit) {
+            overlayFocusRequester.requestFocus()
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.90f))
+                .clickable { showDescriptionOverlay = false }
+                .padding(horizontal = 48.dp, vertical = 36.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    val fadeHeight = 64.dp.toPx()
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Black, Color.Transparent),
+                            startY = size.height - fadeHeight,
+                            endY = size.height
+                        ),
+                        topLeft = Offset(0f, size.height - fadeHeight),
+                        size = Size(size.width, fadeHeight),
+                        blendMode = BlendMode.DstIn
+                    )
+                },
+            contentAlignment = Alignment.TopStart
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .focusRequester(overlayFocusRequester)
+                    .focusable()
+                    .onKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown) {
+                            when (event.key) {
+                                Key.DirectionDown -> {
+                                    coroutineScope.launch {
+                                        scrollState.animateScrollTo(scrollState.value + 250)
+                                    }
+                                    true
+                                }
+                                Key.DirectionUp -> {
+                                    coroutineScope.launch {
+                                        scrollState.animateScrollTo((scrollState.value - 250).coerceAtLeast(0))
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        } else {
+                            false
+                        }
+                    }
+                    .verticalScroll(scrollState)
+                    .clickable { showDescriptionOverlay = false }
+            ) {
+                Text(
+                    text = video.title ?: "",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = video.description ?: "",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f),
+                    lineHeight = 28.sp
+                )
+                Spacer(modifier = Modifier.height(64.dp))
             }
         }
     }

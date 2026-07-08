@@ -67,6 +67,7 @@ import com.example.android.tvleanback.model.Video
 import com.example.android.tvleanback.ui.components.LoadingIndicator
 import com.example.android.tvleanback.ui.components.MovieCard
 import com.example.android.tvleanback.ui.components.SectionHeader
+import com.example.android.tvleanback.ui.components.StudioBadge
 import com.example.android.tvleanback.ui.theme.TvLeanbackTheme
 
 @OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
@@ -207,20 +208,7 @@ fun BrowseScreen(
                                         if (focusedVideo != null) {
                                             Column {
                                                 if (!focusedVideo?.studio.isNullOrEmpty()) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .background(
-                                                                color = Color.White.copy(alpha = 0.2f),
-                                                                shape = MaterialTheme.shapes.small
-                                                            )
-                                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                                    ) {
-                                                        Text(
-                                                            text = focusedVideo?.studio?.uppercase() ?: "",
-                                                            style = MaterialTheme.typography.labelLarge,
-                                                            color = Color.White
-                                                        )
-                                                    }
+                                                    StudioBadge(studio = focusedVideo?.studio ?: "")
                                                     Spacer(modifier = Modifier.height(12.dp))
                                                 }
                                                 Text(
