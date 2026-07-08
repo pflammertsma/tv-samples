@@ -1,5 +1,6 @@
 package com.example.android.tvleanback.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -61,6 +63,11 @@ fun MovieCard(
             }
         },
         scale = CardDefaults.scale(focusedScale = 1.08f),
+        border = CardDefaults.border(
+            focusedBorder = androidx.tv.material3.Border(
+                border = BorderStroke(2.dp, Color.White)
+            )
+        ),
         modifier = modifier.width(cardWidth)
     )
 }
@@ -107,6 +114,11 @@ fun MovieCardPlaceholder(
             )
         },
         scale = CardDefaults.scale(focusedScale = 1.08f),
+        border = CardDefaults.border(
+            focusedBorder = androidx.tv.material3.Border(
+                border = BorderStroke(2.dp, Color.White)
+            )
+        ),
         modifier = modifier.width(cardWidth)
     )
 }
