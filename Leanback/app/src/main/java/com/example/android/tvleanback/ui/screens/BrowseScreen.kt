@@ -5,7 +5,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
+import androidx.compose.foundation.relocation.BringIntoViewResponder
+import androidx.compose.foundation.relocation.bringIntoViewResponder
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +20,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,14 +37,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -61,7 +69,7 @@ import com.example.android.tvleanback.ui.components.MovieCard
 import com.example.android.tvleanback.ui.components.SectionHeader
 import com.example.android.tvleanback.ui.theme.TvLeanbackTheme
 
-@OptIn(ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun BrowseScreen(
     onVideoClick: (Video) -> Unit,
@@ -78,6 +86,7 @@ fun BrowseScreen(
     }.collectAsState(initial = null)
 
     var focusedVideo by remember { mutableStateOf<Video?>(null) }
+    var focusedCategoryIndex by remember { mutableStateOf(0) }
     val focusRequester = remember { FocusRequester() }
     var initialFocusRequested by remember { mutableStateOf(false) }
 
@@ -92,7 +101,6 @@ fun BrowseScreen(
     }
 
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
     val topBarFocusRequester = remember { FocusRequester() }
 
     TvLeanbackTheme {
@@ -137,13 +145,14 @@ fun BrowseScreen(
             }
 
             if (allVideos != null) {
-                // Main Content Scroll - Top Bar and Hero Text are ITEM 0!
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(top = 36.dp, bottom = 64.dp),
-                    verticalArrangement = Arrangement.spacedBy(28.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                PositionFocusedItemInLazyLayout(parentFraction = 0.35f, childFraction = 0.5f) {
+                    // Main Content Scroll - Top Bar and Hero Text are ITEM 0!
+                    LazyColumn(
+                        state = listState,
+                        contentPadding = PaddingValues(top = 36.dp, bottom = 64.dp),
+                        verticalArrangement = Arrangement.spacedBy(28.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                     // Item 0: Top Bar (Search/Settings on Right) + Immersive Hero Text on Left!
                     item {
                         Column(
@@ -160,63 +169,14 @@ fun BrowseScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Button(
                                         onClick = onSearchClick,
-                                        modifier = Modifier
-                                            .focusRequester(topBarFocusRequester)
-                                            .focusProperties { down = focusRequester }
+                                        modifier = Modifier.focusRequester(topBarFocusRequester)
                                     ) {
                                         Text(text = "Search")
                                     }
                                     Button(
-                                        onClick = onSettingsClick,
-                                        modifier = Modifier.focusProperties { down = focusRequester }
+                                        onClick = onSettingsClick
                                     ) {
                                         Text(text = "Settings")
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            // Immersive Hero Text Section
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .padding(end = 270.dp),
-                                contentAlignment = Alignment.BottomStart
-                            ) {
-                                if (focusedVideo != null) {
-                                    Column {
-                                        if (!focusedVideo?.studio.isNullOrEmpty()) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .background(
-                                                        color = Color.White.copy(alpha = 0.2f),
-                                                        shape = MaterialTheme.shapes.small
-                                                    )
-                                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            ) {
-                                                Text(
-                                                    text = focusedVideo?.studio?.uppercase() ?: "",
-                                                    style = MaterialTheme.typography.labelLarge,
-                                                    color = Color.White
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.height(12.dp))
-                                        }
-                                        Text(
-                                            text = focusedVideo?.title ?: "",
-                                            style = MaterialTheme.typography.displayMedium,
-                                            color = Color.White
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Text(
-                                            text = focusedVideo?.description ?: "",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = Color.White.copy(alpha = 0.85f),
-                                            maxLines = 3,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
                                     }
                                 }
                             }
@@ -226,21 +186,65 @@ fun BrowseScreen(
                     // Video Categories (Items 1..N)
                     categories.entries.forEachIndexed { catIndex, (categoryName, videos) ->
                         item {
-                            Column {
-                                // In an Immersive List, DO NOT show a title above the first horizontal row!
-                                if (catIndex > 0) {
+                            Column(
+                                modifier = Modifier.then(
+                                    if (catIndex == 0) {
+                                        Modifier.bringIntoViewIfChildrenAreFocused()
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                            ) {
+                                // For Category 0 (Top Rentals): Render the Immersive Hero Text Section directly above the carousel!
+                                if (catIndex == 0 && focusedCategoryIndex == 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 200.dp)
+                                            .padding(start = 48.dp, end = 270.dp, bottom = 16.dp),
+                                        contentAlignment = Alignment.BottomStart
+                                    ) {
+                                        if (focusedVideo != null) {
+                                            Column {
+                                                if (!focusedVideo?.studio.isNullOrEmpty()) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .background(
+                                                                color = Color.White.copy(alpha = 0.2f),
+                                                                shape = MaterialTheme.shapes.small
+                                                            )
+                                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = focusedVideo?.studio?.uppercase() ?: "",
+                                                            style = MaterialTheme.typography.labelLarge,
+                                                            color = Color.White
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.height(12.dp))
+                                                }
+                                                Text(
+                                                    text = focusedVideo?.title ?: "",
+                                                    style = MaterialTheme.typography.displayMedium,
+                                                    color = Color.White
+                                                )
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Text(
+                                                    text = focusedVideo?.description ?: "",
+                                                    style = MaterialTheme.typography.bodyLarge,
+                                                    color = Color.White.copy(alpha = 0.85f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
                                     SectionHeader(title = categoryName, modifier = Modifier.padding(horizontal = 32.dp))
                                 }
+
                                 LazyRow(
                                     contentPadding = PaddingValues(horizontal = 48.dp),
                                     horizontalArrangement = Arrangement.spacedBy(20.dp),
-                                    modifier = Modifier.then(
-                                        if (catIndex == 0) {
-                                            Modifier.focusProperties { up = topBarFocusRequester }
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
+                                    modifier = Modifier.focusRestorer()
                                 ) {
                                     itemsIndexed(videos) { vidIndex, video ->
                                         MovieCard(
@@ -264,14 +268,7 @@ fun BrowseScreen(
                                                 .onFocusChanged { focusState ->
                                                     if (focusState.isFocused) {
                                                         focusedVideo = video
-                                                        coroutineScope.launch {
-                                                            if (catIndex == 0) {
-                                                                listState.animateScrollToItem(0)
-                                                            } else {
-                                                                // Scroll so the row ABOVE sits at Y=0, placing this active row (catIndex + 1) cleanly in the vertical center!
-                                                                listState.animateScrollToItem(catIndex)
-                                                            }
-                                                        }
+                                                        focusedCategoryIndex = catIndex
                                                     }
                                                 }
                                         )
@@ -287,7 +284,8 @@ fun BrowseScreen(
                             SectionHeader(title = "More Samples", modifier = Modifier.padding(horizontal = 32.dp))
                             LazyRow(
                                 contentPadding = PaddingValues(horizontal = 48.dp),
-                                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                                modifier = Modifier.focusRestorer()
                             ) {
                                 item {
                                     SampleActionCard(
@@ -295,7 +293,7 @@ fun BrowseScreen(
                                         onClick = onVerticalGridClick,
                                         modifier = Modifier.onFocusChanged {
                                             if (it.isFocused) {
-                                                coroutineScope.launch { listState.animateScrollToItem(categories.size) }
+                                                focusedCategoryIndex = categories.size
                                             }
                                         }
                                     )
@@ -306,7 +304,7 @@ fun BrowseScreen(
                                         onClick = onGuidedStepClick,
                                         modifier = Modifier.onFocusChanged {
                                             if (it.isFocused) {
-                                                coroutineScope.launch { listState.animateScrollToItem(categories.size) }
+                                                focusedCategoryIndex = categories.size
                                             }
                                         }
                                     )
@@ -317,7 +315,7 @@ fun BrowseScreen(
                                         onClick = onErrorFragmentClick,
                                         modifier = Modifier.onFocusChanged {
                                             if (it.isFocused) {
-                                                coroutineScope.launch { listState.animateScrollToItem(categories.size) }
+                                                focusedCategoryIndex = categories.size
                                             }
                                         }
                                     )
@@ -325,6 +323,7 @@ fun BrowseScreen(
                             }
                         }
                     }
+                }
                 }
             } else {
                 LoadingIndicator()
@@ -365,4 +364,59 @@ private fun SampleActionCard(
             )
         }
     }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PositionFocusedItemInLazyLayout(
+    parentFraction: Float = 0.35f,
+    childFraction: Float = 0.5f,
+    content: @Composable () -> Unit,
+) {
+    val bringIntoViewSpec = remember(parentFraction, childFraction) {
+        object : BringIntoViewSpec {
+            override fun calculateScrollDistance(
+                offset: Float,       // Item's initial position
+                size: Float,         // Item's size
+                containerSize: Float // Container's size
+            ): Float {
+                // If the item is near the top of the container (e.g. Top Bar at ~7% or Top Rentals Immersive Row at ~24% of screen height),
+                // do not scroll vertically at all! We use proportional math (containerSize * 0.45f) so this top-lock works across all TV resolutions (720p, 1080p, 4K).
+                if (offset >= 0f && offset <= containerSize * 0.45f) {
+                    return 0f
+                }
+
+                val initialTargetForLeadingEdge =
+                    parentFraction * containerSize - (childFraction * size)
+                val targetForLeadingEdge = if (size <= containerSize &&
+                    (containerSize - initialTargetForLeadingEdge) < size) {
+                    containerSize - size
+                } else {
+                    initialTargetForLeadingEdge
+                }
+                return offset - targetForLeadingEdge
+            }
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalBringIntoViewSpec provides bringIntoViewSpec,
+        content = content,
+    )
+}
+
+@Composable
+fun Modifier.bringIntoViewIfChildrenAreFocused(): Modifier {
+    val responder = remember {
+        object : BringIntoViewResponder {
+            override fun calculateRectForParent(localRect: Rect): Rect {
+                return Rect(0f, 0f, localRect.right, localRect.bottom)
+            }
+
+            override suspend fun bringChildIntoView(localRect: () -> Rect?) {
+                // No local vertical scrolling needed within this static column container
+            }
+        }
+    }
+    return this.bringIntoViewResponder(responder)
 }
