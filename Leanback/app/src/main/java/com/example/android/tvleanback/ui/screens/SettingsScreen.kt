@@ -1,14 +1,14 @@
 package com.example.android.tvleanback.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.ListItem
+import androidx.tv.material3.ListItemDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Switch
 import androidx.tv.material3.Text
@@ -47,22 +48,24 @@ fun SettingsScreen(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Color(0x80000000)), // Semi-transparent scrim
-            contentAlignment = Alignment.CenterEnd
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 64.dp, vertical = 48.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(400.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(32.dp)
+                modifier = Modifier.fillMaxWidth(0.65f)
             ) {
                 Text(
                     text = stringResource(id = R.string.pref_title_settings),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Manage your application preferences and account status",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(36.dp))
 
                 // Recommendations Switch Item
                 ListItem(
@@ -73,14 +76,35 @@ fun SettingsScreen(
                         prefs.edit().putBoolean(recKey, newValue).apply()
                     },
                     headlineContent = {
-                        Text(text = stringResource(id = R.string.pref_title_recommendations))
+                        Text(
+                            text = stringResource(id = R.string.pref_title_recommendations),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = "Enable home screen recommendation cards and notifications",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     },
                     trailingContent = {
                         Switch(
                             checked = recommendationsEnabled,
                             onCheckedChange = null // Handled by ListItem onClick
                         )
-                    }
+                    },
+                    scale = ListItemDefaults.scale(focusedScale = 1.02f),
+                    border = ListItemDefaults.border(
+                        focusedBorder = androidx.tv.material3.Border(
+                            border = BorderStroke(2.dp, Color.White)
+                        )
+                    ),
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -89,8 +113,29 @@ fun SettingsScreen(
                     selected = false,
                     onClick = onLoginClick,
                     headlineContent = {
-                        Text(text = stringResource(id = R.string.pref_title_login))
-                    }
+                        Text(
+                            text = stringResource(id = R.string.pref_title_login),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = stringResource(id = R.string.pref_title_login_description),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    scale = ListItemDefaults.scale(focusedScale = 1.02f),
+                    border = ListItemDefaults.border(
+                        focusedBorder = androidx.tv.material3.Border(
+                            border = BorderStroke(2.dp, Color.White)
+                        )
+                    ),
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

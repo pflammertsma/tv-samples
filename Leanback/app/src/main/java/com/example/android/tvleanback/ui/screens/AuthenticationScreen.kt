@@ -13,8 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,21 +21,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
-import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.example.android.tvleanback.R
+import com.example.android.tvleanback.ui.components.TvTextField
 import com.example.android.tvleanback.ui.theme.TvLeanbackTheme
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -48,6 +51,10 @@ fun AuthenticationScreen(
     val context = LocalContext.current
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    val usernameFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
+    val buttonFocusRequester = remember { FocusRequester() }
 
     TvLeanbackTheme {
         Row(
@@ -96,77 +103,64 @@ fun AuthenticationScreen(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Username Field
-                    Surface(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = stringResource(id = R.string.pref_title_username),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            BasicTextField(
-                                value = username,
-                                onValueChange = { username = it },
-                                textStyle = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = MaterialTheme.typography.titleMedium.fontSize
-                                ),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.fillMaxWidth(),
-                                decorationBox = { inner ->
-                                    Box {
-                                        if (username.isEmpty()) {
-                                            Text("Enter username", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                                        }
-                                        inner()
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(id = R.string.pref_title_username),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TvTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        placeholder = "Enter username",
+                        focusRequester = usernameFocusRequester,
+                        imeAction = ImeAction.Next,
+                        onImeAction = {
+                            passwordFocusRequester.requestFocus()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Password Field
-                    Surface(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = stringResource(id = R.string.pref_title_password),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            BasicTextField(
-                                value = password,
-                                onValueChange = { password = it },
-                                visualTransformation = PasswordVisualTransformation(),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                textStyle = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = MaterialTheme.typography.titleMedium.fontSize
-                                ),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.fillMaxWidth(),
-                                decorationBox = { inner ->
-                                    Box {
-                                        if (password.isEmpty()) {
-                                            Text("Enter password", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                                        }
-                                        inner()
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(id = R.string.pref_title_password),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TvTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        placeholder = "Enter password",
+                        focusRequester = passwordFocusRequester,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                        onImeAction = {
+                            buttonFocusRequester.requestFocus()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
+
                     Button(
                         onClick = {
                             Toast.makeText(context, "Welcome!", Toast.LENGTH_SHORT).show()
                             onFinish()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(buttonFocusRequester),
+                        scale = ButtonDefaults.scale(focusedScale = 1.02f),
+                        border = ButtonDefaults.border(
+                            focusedBorder = androidx.tv.material3.Border(
+                                border = BorderStroke(2.dp, Color.White)
+                            )
+                        )
                     ) {
                         Text(text = stringResource(id = R.string.guidedstep_continue), modifier = Modifier.padding(8.dp))
                     }

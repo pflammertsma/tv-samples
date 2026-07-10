@@ -15,10 +15,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,17 +27,10 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
@@ -50,9 +39,10 @@ import com.example.android.tvleanback.data.VideoRepository
 import com.example.android.tvleanback.model.Video
 import com.example.android.tvleanback.ui.components.LoadingIndicator
 import com.example.android.tvleanback.ui.components.MovieCard
+import com.example.android.tvleanback.ui.components.TvTextField
 import com.example.android.tvleanback.ui.theme.TvLeanbackTheme
 
-@OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalTvMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun SearchScreen(
     onVideoClick: (Video) -> Unit,
@@ -87,86 +77,20 @@ fun SearchScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(32.dp)
         ) {
-            // Search Header Box (Clickable TV Surface wrapping JetStream TextField pattern)
-            Surface(
-                onClick = { textFieldFocusRequester.requestFocus() },
+            // Search Header Box
+            TvTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Search for videos by title, category, or description...",
+                focusRequester = textFieldFocusRequester,
+                imeAction = ImeAction.Search,
+                onImeAction = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                shape = ClickableSurfaceDefaults.shape(shape = MaterialTheme.shapes.small),
-                colors = ClickableSurfaceDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                    pressedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f),
-                border = ClickableSurfaceDefaults.border(
-                    border = androidx.tv.material3.Border(
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.border),
-                        shape = MaterialTheme.shapes.small
-                    ),
-                    focusedBorder = androidx.tv.material3.Border(
-                        border = androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
-                        shape = MaterialTheme.shapes.small
-                    )
-                )
-            ) {
-                TextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = {
-                        Text(
-                            text = "Search for videos by title, category, or description...",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(textFieldFocusRequester)
-                        .onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyUp) {
-                                when (it.key) {
-                                    Key.DirectionUp -> {
-                                        focusManager.moveFocus(FocusDirection.Up)
-                                        true
-                                    }
-                                    Key.DirectionDown -> {
-                                        focusManager.moveFocus(FocusDirection.Down)
-                                        true
-                                    }
-                                    Key.Back -> {
-                                        focusManager.moveFocus(FocusDirection.Exit)
-                                        true
-                                    }
-                                    else -> false
-                                }
-                            } else {
-                                false
-                            }
-                        },
-                    keyboardOptions = KeyboardOptions(
-                        autoCorrectEnabled = false,
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            focusManager.moveFocus(FocusDirection.Down)
-                        }
-                    ),
-                    maxLines = 1,
-                    textStyle = MaterialTheme.typography.titleMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent
-                    )
-                )
-            }
+                    .padding(bottom = 24.dp)
+            )
 
             // Results Grid
             if (allVideos == null) {
