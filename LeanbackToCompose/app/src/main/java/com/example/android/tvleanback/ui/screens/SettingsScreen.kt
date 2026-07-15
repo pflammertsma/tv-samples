@@ -40,8 +40,13 @@ fun SettingsScreen(
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     val recKey = stringResource(id = R.string.pref_key_recommendations)
 
+    val autoplayPreviewsKey = stringResource(id = R.string.pref_key_autoplay_previews)
+
     var recommendationsEnabled by remember {
         mutableStateOf(prefs.getBoolean(recKey, true))
+    }
+    var autoplayPreviewsEnabled by remember {
+        mutableStateOf(prefs.getBoolean(autoplayPreviewsKey, true))
     }
 
     TvLeanbackTheme {
@@ -91,6 +96,47 @@ fun SettingsScreen(
                     trailingContent = {
                         Switch(
                             checked = recommendationsEnabled,
+                            onCheckedChange = null // Handled by ListItem onClick
+                        )
+                    },
+                    scale = ListItemDefaults.scale(focusedScale = 1.02f),
+                    border = ListItemDefaults.border(
+                        focusedBorder = androidx.tv.material3.Border(
+                            border = BorderStroke(2.dp, Color.White)
+                        )
+                    ),
+                    colors = ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Autoplay Video Previews Switch Item
+                ListItem(
+                    selected = false,
+                    onClick = {
+                        val newValue = !autoplayPreviewsEnabled
+                        autoplayPreviewsEnabled = newValue
+                        prefs.edit().putBoolean(autoplayPreviewsKey, newValue).apply()
+                    },
+                    headlineContent = {
+                        Text(
+                            text = stringResource(id = R.string.pref_title_autoplay_previews),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            text = "Play silent video previews when focusing on cards",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = autoplayPreviewsEnabled,
                             onCheckedChange = null // Handled by ListItem onClick
                         )
                     },

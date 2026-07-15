@@ -112,6 +112,8 @@
     <string name="pref_title_settings">App Settings</string>
     <string name="pref_title_recommendations">Autoplay Next Video</string>
     <string name="pref_key_recommendations">pref_autoplay_next</string>
+    <string name="pref_title_autoplay_previews">Autoplay Video Previews</string>
+    <string name="pref_key_autoplay_previews">pref_autoplay_previews</string>
     <string name="pref_key_screen_general">general_settings</string>
     <string name="pref_title_screen_general">General Settings</string>
     <string name="pref_key_screen_signin">signin</string>
